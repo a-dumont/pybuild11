@@ -157,18 +157,38 @@ elif [[ $ACTION = "2" ]]; then
 		if [[ $ANS = "y"  ]] || [[ $ANS = "Y"  ]] || [[ $ANS = "yes"  ]]; then
 			mkdir $MODULE
 			cd $MODULE
+			mkdir build
+
+			touch README.md
+			printf 'cmake_minimum_required(VERSION 3.25)\n\n' >> CMakeLists.txt
+			printf 'project(' >> CMakeLists.txt
+			printf "$MODULE" | awk '{printf tolower($0)}' >> CMakeLists.txt
+			printf ' VERSION 1.0.0)\n\n' >> CMakeLists.txt
+			printf 'if(CYGWIN)\n\tset(Python_EXECUTABLE "/c/Anaconda2/python")\n' >> CMakeLists.txt
+			printf 'endif()\n\n' >> CMakeLists.txt
+			printf 'find_package(Python COMPONENTS Interpreter REQUIRED)\n\n' >> CMakeLists.txt
+
 			mkdir $MODULE
+			touch $MODULE/__init__.py
 			ITER=1
 			while [ $ITER -le $NUM  ]; do
 				read -p "What is the name of submodule $ITER? " SUBMODULE
 				create_code $PWD $SUBMODULE
 				cd $MODULE
 				add_python $SUBMODULE
+				printf "import $MODULE.$SUBMODULE as $SUBMODULE\n\n" >> __init__.py
+
 				cd ..
+				printf "add_subdirectory($SUBMODULE)\n" >> CMakeLists.txt
+				printf "install(DIRECTORY \${PROJECT_SOURCE_DIR}/$SUBMODULE/obj/\n\t" >> CMakeLists.txt
+				printf "DESTINATION \${PROJECT_SOURCE_DIR}/$MODULE/$SUBMODULE\n\t" >> CMakeLists.txt
+				printf "FILES_MATCHING PATTERN \"lib" >> CMakeLists.txt
+				printf "$SUBMODULE" | awk '{printf tolower($0)}' >> CMakeLists.txt
+				printf ".*\")\n\n" >> CMakeLists.txt
 				ITER=$((ITER+1))
 			done
-			cd ..
-			#add_python $NAME
+			cd build && cmake .. && cmake --build . && cmake --install .
+			cd ../..
 			exit 0
 		else
 			exit 0
