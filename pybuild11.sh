@@ -25,7 +25,7 @@ create_code()
 	mkdir $DIR
 
 	#Makes CMakeLists.txt
-	printf 'cmake_minimum_required(VERSION 3.25)\n\n' >> $DIR/CMakeLists.txt
+	printf 'cmake_minimum_required(VERSION 3.23)\n\n' >> $DIR/CMakeLists.txt
 		
 	printf "project($NAME VERSION 1.0.0)\n\n" >> $DIR/CMakeLists.txt
 		
@@ -53,6 +53,12 @@ create_code()
 		
 	printf 'file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)\n\n' >> $DIR/CMakeLists.txt
 
+	printf 'if(CYGWIN)\n\t' >> $DIR/CMakeLists.txt
+	printf 'add_compile_options(-Wall -O3 -march=native -MMD -MP -DMS_WIN64 -D_hypot=hypot)\n' >> $DIR/CMakeLists.txt
+	printf 'else()\n\t' >> $DIR/CMakeLists.txt
+	printf 'add_compile_options(-Wall -O3 -march=native -MMD -MP)\n' >> $DIR/CMakeLists.txt
+	printf 'endif()\n\n' >> $DIR/CMakeLists.txt
+
 	printf 'add_library( ' >> $DIR/CMakeLists.txt
 	printf "$NAME " | awk '{printf tolower($0)}' >> $DIR/CMakeLists.txt 
 	printf '${SRC_FILES})\n\n' >> $DIR/CMakeLists.txt
@@ -66,17 +72,15 @@ create_code()
 	printf 'PROPERTIES PREFIX \"lib\")\n' >> $DIR/CMakeLists.txt
 	printf 'endif()\n\n'>>$DIR/CMakeLists.txt
 
-	printf 'add_compile_options(-Wall -O3 -march=native -MMD -MP)\n' >> $DIR/CMakeLists.txt
 
 	printf 'if(CYGWIN)\n\t' >> $DIR/CMakeLists.txt
-	printf 'add_compile_options(-DMS_WIN64 -D_hypot-hypot)\n\t' >> $DIR/CMakeLists.txt
 	printf 'target_link_libraries(' >> $DIR/CMakeLists.txt
 	printf "$NAME -" | awk '{printf tolower($0)}' >> $DIR/CMakeLists.txt
-    printf 'DMS_WIN64 -D_hypot=hypot)\n\t' >> $DIR/CMakeLists.txt	
+    	printf 'DMS_WIN64 -D_hypot=hypot)\n\t' >> $DIR/CMakeLists.txt	
 	printf 'target_link_libraries(' >> $DIR/CMakeLists.txt
 	printf "$NAME -" | awk '{printf tolower($0)}' >> $DIR/CMakeLists.txt 
 	printf 'L/c/Anaconda2/ -lpython27)\n' >> $DIR/CMakeLists.txt
-	printf 'elseif(UNIX)\n\t' >> $DIR/CMakeLists.txt
+	printf 'else()\n\t' >> $DIR/CMakeLists.txt
 	printf 'target_link_libraries(' >> $DIR/CMakeLists.txt
 	printf "$NAME -" | awk '{printf tolower($0)}' >> $DIR/CMakeLists.txt
 	printf 'lm)\n' >>$DIR/CMakeLists.txt
@@ -122,8 +126,13 @@ add_python()
 {
 	NAME=$1
 	mkdir $NAME
-	printf 'import os\n\nif os.name=="nt":\n\tos.add_dll_directories(' >> $NAME/__init__.py
-	printf '"C:/cygwin64/usr/x86_64-w64-mingw32/sys-root/mingw/bin")\n\n'>>$NAME/__init__.py
+	printf 'import os\n\nif os.name=="nt":\n\t' >> $NAME/__init__.py
+	printf 'try:\n\t\t' >> $NAME/__init__.py
+	printf 'os.add_dll_directories(' >> $NAME/__init__.py
+	printf '"C:/cygwin64/usr/x86_64-w64-mingw32/sys-root/mingw/bin")\n\t'>>$NAME/__init__.py
+	printf 'except:\n\t\t' >> $NAME/__init__.py
+	printf 'os.environ["PATH"] = "C:/cygwin64/usr/x86_64-w64-mingw32/sys-root/mingw/bin"+";"'>>$NAME/__init__.py
+	printf '+os.environ["PATH"]\n\n'>>$NAME/__init__.py
 	printf 'from .lib' >> $NAME/__init__.py
 	printf "$NAME import *" | awk '{printf tolower($0)}' >> $NAME/__init__.py
 	printf '\n\ndel os, lib' >> $NAME/__init__.py
@@ -192,7 +201,7 @@ elif [[ $ACTION = "2" ]]; then
 
 			touch README.md
 			create_setup_py $MODULE
-			printf 'cmake_minimum_required(VERSION 3.25)\n\n' >> CMakeLists.txt
+			printf 'cmake_minimum_required(VERSION 3.23)\n\n' >> CMakeLists.txt
 			printf 'project(' >> CMakeLists.txt
 			printf "$MODULE" | awk '{printf tolower($0)}' >> CMakeLists.txt
 			printf ' VERSION 1.0.0)\n\n' >> CMakeLists.txt
