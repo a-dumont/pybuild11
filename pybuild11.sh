@@ -13,7 +13,7 @@ printf '| |  _ \| | | |  _ \| | | | | |/ _  | | | | |\n'
 printf '| | |_) | |_| | |_) | |_| | | | (_| | | | | |\n'
 printf '| | .__/ \__, |_.__/ \__,_|_|_|\__,_| |_|_| |\n'
 printf '| |_|    |___/                              |\n'
-printf '|___________________________________________|\n'
+printf '|___________________________________________|\n\n\n'
 
 create_code()
 {
@@ -161,6 +161,8 @@ create_setup_py()
 	printf 'zip_safe=False\n)\n' >> setup.py
 }
 
+read -p 'Are you using cygwin and mingw to compile for windows? (y/N): ' WIN
+
 printf '\n\nWhat do you want to do?\n'
 printf '(1) Create a single python module.\n'
 printf '(2) Create a python module with multiple submodules.\n'
@@ -170,7 +172,7 @@ read -p 'Enter choice here (3): ' ACTION
 
 if   [[ $ACTION = "1" ]]; then
 		read -p "What is the name of the module? " MODULE
-		read -p "Do you want to create dir $PWD/$NAME and its content? (y/N): " ANS
+		read -p "Do you want to create dir $PWD/$MODULE and its content? (y/N): " ANS
 		if [[ $ANS = "y"  ]] || [[ $ANS = "Y"  ]] || [[ $ANS = "yes"  ]]; then
 			create_code $PWD $MODULE
 			cd $MODULE
@@ -179,7 +181,12 @@ if   [[ $ACTION = "1" ]]; then
 			printf "include $MODULE/lib" >> MANIFEST.in
 			printf "$MODULE.*\n" | awk '{printf tolower($0)}' >> MANIFEST.in
 			mkdir build && cd build
-			cmake .. && cmake --build . && cmake --install .
+			if [[ $WIN = "y"  ]] || [[ $WIN = "Y"  ]] || [[ $WIN = "yes"  ]]; then
+				CXX=/usr/bin/x86_64-w64-mingw32-g++.exe cmake ..
+				cmake --build . && cmake --install .
+			else
+				cmake .. && cmake --build . && cmake --install .
+			fi
 			cd ../..
 			printf 'To install the python package run: python setup.py install\n'
 			exit 0
@@ -193,7 +200,7 @@ elif [[ $ACTION = "2" ]]; then
 			printf 'Invalid number. Exiting.\n'
 			exit 1
 		fi
-		read -p "Do you want to create dir $PWD/$NAME and its content? (y/N): " ANS
+		read -p "Do you want to create dir $PWD/$MODULE and its content? (y/N): " ANS
 		if [[ $ANS = "y"  ]] || [[ $ANS = "Y"  ]] || [[ $ANS = "yes"  ]]; then
 			mkdir $MODULE
 			cd $MODULE
@@ -233,7 +240,13 @@ elif [[ $ACTION = "2" ]]; then
 
 				ITER=$((ITER+1))
 			done
-			cd build && cmake .. && cmake --build . && cmake --install .
+			cd build
+			if [[ $WIN = "y"  ]] || [[ $WIN = "Y"  ]] || [[ $WIN = "yes"  ]]; then
+				CXX=/usr/bin/x86_64-w64-mingw32-g++.exe cmake ..
+				cmake --build . && cmake --install .
+			else
+				cmake .. && cmake --build . && cmake --install .
+			fi
 			cd ../..
 			printf 'To install the python package run: python setup.py install\n'
 			exit 0
